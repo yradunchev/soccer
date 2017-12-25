@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# fetch raw data
+raw=$(curl -s http://www.football-data.co.uk/mmz4281/1718/I2.csv)
+# clean data
+games=$(awk '
+BEGIN{FS=OFS=","}; NR >= 2 {split($2, a, "/"); print 20a[3] a[2] a[1],$3,$4,$7}
+' <(echo "$raw") | tac)
+# home draws
+home=$(cut -d, -f2,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
+# away draws
+away=$(cut -d, -f3,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
+# teams
+teams=$(cut -d, -f2 <(echo "$games") | sort | uniq)
+
+lastgames() {
+  last5=$(echo "$games" | grep "$1" -m5)
+  awk -v team="$1" '
+  BEGIN{FS=IFS","}
+  {
+    if ($4=="D") strike=strike"D";
+    else if (($4=="H" && $2==team) || ($4=="A" && $3==team)) strike=strike"W";
+    else strike=strike"L";
+  }
+  END{print team" last five games: "strike}
+  ' <(echo "$last5")
+}	# ----------  end of function lastgames  ----------
+
+lasthome() {
+  last5=$(echo "$games" | cut -d, -f2,4 | grep "$1" -m5)
+  awk -v team="$1" '
+  BEGIN {FS=IFS=","}
+  {
+    if ($2=="D") strike=strike"D";
+    else if ($2=="H") strike=strike"W";
+    else strike=strike"L";
+  }
+  END{print team" last five home games: "strike;}
+  ' <(echo "$last5")
+}	# ----------  end of function lastgames  ----------
+
+lastaway() {
+  last5=$(echo "$games" | cut -d, -f3,4 | grep "$1" -m5)
+  awk -v team="$1" '
+  BEGIN {FS=IFS=","}
+  {
+    if ($2=="D") strike=strike"D";
+    else if ($2=="A") strike=strike"W";
+    else strike=strike"L";
+  }
+  END{print team" last five away games: "strike;}
+  ' <(echo "$last5")
+}	# ----------  end of function lastgames  ----------
+
+case "$1" in
+  h) echo "$home" ;;
+  a) echo "$away" ;;
+  l) lastgames "$2" ;;
+  lh) lasthome "$2" ;;
+  la) lastaway "$2" ;;
+  *) echo "$games" ;;
+esac    # --- end of case ---
