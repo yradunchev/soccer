@@ -53,25 +53,25 @@ lastaway() {
 }	# ----------  end of function lastaway  ----------
 
 allteamsallgames() {
-  for team in "${teams[@]}"
+  for t in "${teams[@]}"
   do
-    lastgames "$team"
+    lastgames "$t"
     # other stuff on $name
   done
 }	# ----------  end of function all games ----------
 
 allteamshomegames() {
-  for team in "${teams[@]}"
+  for t in "${teams[@]}"
   do
-    lasthome "$team"
+    lasthome "$t"
     # other stuff on $name
   done
 }	# ----------  end of function all home  ----------
 
 allteamsawaygames() {
-  for team in "${teams[@]}"
+  for t in "${teams[@]}"
   do
-    lastaway "$team"
+    lastaway "$t"
     # other stuff on $name
   done
 }	# ----------  end of function all away  ----------
