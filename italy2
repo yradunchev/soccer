@@ -11,7 +11,7 @@ home=$(cut -d, -f2,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | 
 # away draws
 away=$(cut -d, -f3,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
 # teams
-teams=$(cut -d, -f2 <(echo "$games") | sort | uniq)
+teams=($(cut -d, -f2 <(echo "$games") | sort | uniq))
 
 lastgames() {
   last5=$(echo "$games" | grep "$1" -m5)
@@ -37,7 +37,7 @@ lasthome() {
   }
   END{print team" last five home games: "strike;}
   ' <(echo "$last5")
-}	# ----------  end of function lastgames  ----------
+}	# ----------  end of function lasthome  ----------
 
 lastaway() {
   last5=$(echo "$games" | cut -d, -f3,4 | grep "$1" -m5)
@@ -50,7 +50,31 @@ lastaway() {
   }
   END{print team" last five away games: "strike;}
   ' <(echo "$last5")
-}	# ----------  end of function lastgames  ----------
+}	# ----------  end of function lastaway  ----------
+
+allteamsallgames() {
+  for team in "${teams[@]}"
+  do
+    lastgames "$team"
+    # other stuff on $name
+  done
+}	# ----------  end of function all games ----------
+
+allteamshomegames() {
+  for team in "${teams[@]}"
+  do
+    lasthome "$team"
+    # other stuff on $name
+  done
+}	# ----------  end of function all home  ----------
+
+allteamsawaygames() {
+  for team in "${teams[@]}"
+  do
+    lastaway "$team"
+    # other stuff on $name
+  done
+}	# ----------  end of function all away  ----------
 
 case "$1" in
   h) echo "$home" ;;
@@ -58,5 +82,8 @@ case "$1" in
   l) lastgames "$2" ;;
   lh) lasthome "$2" ;;
   la) lastaway "$2" ;;
+  t) allteamsallgames ;;
+  th) allteamshomegames ;;
+  ta) allteamsawaygames ;;
   *) echo "$games" ;;
 esac    # --- end of case ---
