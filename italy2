@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # fetch raw data
 raw=$(curl -s http://www.football-data.co.uk/mmz4281/1718/I2.csv)
@@ -14,9 +14,9 @@ away=$(cut -d, -f3,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | 
 mapfile -t teams < <(cut -d, -f2 <(echo "$games") | sort | uniq)
 
 lastgames() {
-  last5=$(echo "$games" | grep "$1" -m5)
+  last5=$(echo "$games" | grep -i "$1" -m5)
   awk -v team="$1" '
-  BEGIN{FS=IFS","}
+  BEGIN{FS=IFS",";IGNORECASE=1;}
   {
     if ($4=="D") strike=strike"D";
     else if (($4=="H" && $2==team) || ($4=="A" && $3==team)) strike=strike"W";
@@ -27,7 +27,7 @@ lastgames() {
 }	# ----------  end of function lastgames  ----------
 
 lasthome() {
-  last5=$(echo "$games" | cut -d, -f2,4 | grep "$1" -m5)
+  last5=$(echo "$games" | cut -d, -f2,4 | grep -i "$1" -m5)
   awk -v team="$1" '
   BEGIN {FS=IFS=","}
   {
@@ -40,9 +40,9 @@ lasthome() {
 }	# ----------  end of function lasthome  ----------
 
 lastaway() {
-  last5=$(echo "$games" | cut -d, -f3,4 | grep "$1" -m5)
+  last5=$(echo "$games" | cut -d, -f3,4 | grep -i "$1" -m5)
   awk -v team="$1" '
-  BEGIN {FS=IFS=","}
+  BEGIN {FS=IFS=",";IGNORECASE = 1;}
   {
     if ($2=="D") strike=strike"D";
     else if ($2=="A") strike=strike"W";
