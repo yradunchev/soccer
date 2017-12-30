@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
 # fetch raw data
-raw=$(curl -s http://www.football-data.co.uk/mmz4281/1718/I2.csv)
+fetchdata() {
+  curl -s http://www.football-data.co.uk/mmz4281/1718/I2.csv -o i2
+}
+# fetch data if missing
+[[ -f i2 ]] || fetchdata
 # clean data
 games=$(awk '
 BEGIN{FS=OFS=","}; NR >= 2 {split($2, a, "/"); print 20a[3] a[2] a[1],$3,$4,$7}
-' <(echo "$raw") | tac)
+' i2 | tac)
 # home draws
 home=$(cut -d, -f2,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
 # away draws
@@ -77,6 +81,7 @@ allteamsawaygames() {
 }	# ----------  end of function all away  ----------
 
 case "$1" in
+  d) fetchdata ;;
   h) echo "$home" ;;
   a) echo "$away" ;;
   l) lastgames "$2" ;;
