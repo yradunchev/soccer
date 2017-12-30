@@ -8,12 +8,12 @@ fetchdata() {
 [[ -f i2 ]] || fetchdata
 # clean data
 games=$(awk '
-BEGIN{FS=OFS=","}; NR >= 2 {split($2, a, "/"); print 20a[3] a[2] a[1],$3,$4,$7}
+BEGIN{FS=OFS=","}; NR >= 2 {split($2, a, "/"); print 20a[3] a[2] a[1],$3,$4,$5,$6,$7}
 ' i2 | tac)
 # home draws
-home=$(cut -d, -f2,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
+home=$(cut -d, -f2,6 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
 # away draws
-away=$(cut -d, -f3,4 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
+away=$(cut -d, -f3,6 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
 # teams
 mapfile -t teams < <(cut -d, -f2 <(echo "$games") | sort | uniq)
 
@@ -22,8 +22,8 @@ lastgames() {
   awk -v team="$1" '
   BEGIN{FS=IFS",";IGNORECASE=1;}
   {
-    if ($4=="D") strike=strike"D";
-    else if (($4=="H" && $2==team) || ($4=="A" && $3==team)) strike=strike"W";
+    if ($6=="D") strike=strike"D";
+    else if (($6=="H" && $2==team) || ($6=="A" && $3==team)) strike=strike"W";
     else strike=strike"L";
   }
   END{print team" last five games: "strike}
@@ -31,7 +31,7 @@ lastgames() {
 }	# ----------  end of function lastgames  ----------
 
 lasthome() {
-  last5=$(echo "$games" | cut -d, -f2,4 | grep -i "$1" -m5)
+  last5=$(echo "$games" | cut -d, -f2,6 | grep -i "$1" -m5)
   awk -v team="$1" '
   BEGIN {FS=IFS=","}
   {
@@ -44,7 +44,7 @@ lasthome() {
 }	# ----------  end of function lasthome  ----------
 
 lastaway() {
-  last5=$(echo "$games" | cut -d, -f3,4 | grep -i "$1" -m5)
+  last5=$(echo "$games" | cut -d, -f3,6 | grep -i "$1" -m5)
   awk -v team="$1" '
   BEGIN {FS=IFS=",";IGNORECASE = 1;}
   {
