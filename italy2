@@ -2,13 +2,16 @@
 
 # fetch raw data
 fetchdata() {
-  curl -s http://www.football-data.co.uk/mmz4281/1718/I2.csv -o i2
+  league=${2^^}
+  curl -s http://www.football-data.co.uk/mmz4281/"$1"/"$league".csv -o i2
 }
 # fetch data if missing
 [[ -f i2 ]] || fetchdata
 # clean data
 games=$(awk '
-BEGIN{FS=OFS=","}; NR >= 2 {split($2, a, "/"); print 20a[3] a[2] a[1],$3,$4,$5,$6,$7}
+  BEGIN{FS=OFS=","}; 
+  NR >= 2 {split($2, a, "/"); 
+  print 20a[3] a[2] a[1],$3,$4,$5,$6,$7}
 ' i2 | tac)
 # home draws
 home=$(cut -d, -f2,6 <(echo "$games") | grep ,D | cut -d, -f1| sort | uniq -c | sort -r)
@@ -20,13 +23,13 @@ mapfile -t teams < <(cut -d, -f2 <(echo "$games") | sort | uniq)
 lastgames() {
   last5=$(echo "$games" | grep -i "$1" -m5)
   awk -v team="$1" '
-  BEGIN{FS=IFS",";IGNORECASE=1;}
+  BEGIN{FS=IFS","}
   {
     if ($6=="D") strike=strike"D";
     else if (($6=="H" && $2==team) || ($6=="A" && $3==team)) strike=strike"W";
     else strike=strike"L";
   }
-  END{print team" last five games: "strike}
+  END{print strike}
   ' <(echo "$last5")
 }	# ----------  end of function lastgames  ----------
 
@@ -39,7 +42,7 @@ lasthome() {
     else if ($2=="H") strike=strike"W";
     else strike=strike"L";
   }
-  END{print team" last five home games: "strike;}
+  END{print strike;}
   ' <(echo "$last5")
 }	# ----------  end of function lasthome  ----------
 
@@ -52,14 +55,15 @@ lastaway() {
     else if ($2=="A") strike=strike"W";
     else strike=strike"L";
   }
-  END{print team" last five away games: "strike;}
+  END{print strike;}
   ' <(echo "$last5")
 }	# ----------  end of function lastaway  ----------
 
 allteamsallgames() {
   for t in "${teams[@]}"
   do
-    lastgames "$t"
+    lg=$(lastgames "$t")
+    printf '%-15s %5s\n' "$t" "$lg"
     # other stuff on $name
   done
 }	# ----------  end of function all games ----------
@@ -67,28 +71,57 @@ allteamsallgames() {
 allteamshomegames() {
   for t in "${teams[@]}"
   do
-    lasthome "$t"
-    # other stuff on $name
+    lg=$(lasthome "$t")
+    printf '%-15s %5s\n' "$t" "$lg"
   done
 }	# ----------  end of function all home  ----------
 
 allteamsawaygames() {
   for t in "${teams[@]}"
   do
-    lastaway "$t"
-    # other stuff on $name
+    lg=$(lastaway "$t")
+    printf '%-15s %5s\n' "$t" "$lg"
   done
 }	# ----------  end of function all away  ----------
 
+
+teamwide() {
+  tms=("$@")
+  for t in "${tms[@]}"
+  do
+#    t=$(sed -e "s/\b./\u\0/g" <(echo "$t"))
+    t=${t^}
+    lh=$(lasthome "$t")
+    la=$(lastaway "$t")
+    lt=$(lastgames "$t")
+    awk -v team="$t" -v lh="$lh" -v la="$la" -v lt="$lt" '
+    BEGIN{FS=OFS=","}
+    $2~team{gfh+=$4;gah+=$5;team=$2}
+    $2~team&&$6=="H"{hwin+=1;team=$2}
+    $2~team&&$6=="D"{hdrw+=1;team=$2}
+    $2~team&&$6=="A"{hlos+=1;team=$2}
+    $3~team{gfa+=$5;gaa+=$4;team=$3}
+    $3~team&&$6=="A"{awin+=1;team=$3}
+    $3~team&&$6=="D"{adrw+=1;team=$3}
+    $3~team&&$6=="H"{alos+=1;team=$3}
+    END{
+      tgf=gfh+gfa;tga=gah+gaa;
+      printf "%-15s: %02d%02d%02d %02d:%02d %5s | ",team,hwin,hdrw,hlos,gfh,gah,lh
+      printf "%02d%02d%02d %02d:%02d %5s | ",awin,adrw,alos,gfa,gaa,la
+      printf "%02d%02d%02d %02d:%02d %5s\n",hwin+awin,hdrw+adrw,hlos+alos,tgf,tga,lt
+    }
+    ' <(echo "$games")
+  done
+}	# ----------  end of function teamwide  ----------
+
 case "$1" in
-  d) fetchdata ;;
+  d) shift; fetchdata "$@";;
   h) echo "$home" ;;
   a) echo "$away" ;;
-  l) lastgames "$2" ;;
-  lh) lasthome "$2" ;;
-  la) lastaway "$2" ;;
   t) allteamsallgames ;;
   th) allteamshomegames ;;
   ta) allteamsawaygames ;;
-  *) echo "$games" ;;
+  w) teamwide "${teams[@]}";;
+  s) echo "$games" ;;
+  *) teamwide "$@";;
 esac    # --- end of case ---
